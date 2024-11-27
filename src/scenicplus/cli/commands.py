@@ -24,6 +24,7 @@ handlers = [logging.StreamHandler(stream=sys.stdout)]
 logging.basicConfig(level=level, format=format, handlers=handlers)
 log = logging.getLogger("SCENIC+")
 
+
 def init_snakemake_folder(
         out_dir: pathlib.Path):
     """
@@ -43,8 +44,11 @@ def init_snakemake_folder(
     os.makedirs(os.path.join(out_dir, "Snakemake", "workflow"))
     config_file = str(files("scenicplus.snakemake").joinpath("config.yaml"))
     snakefile = str(files("scenicplus.snakemake").joinpath("Snakefile"))
-    shutil.copy(config_file, os.path.join(out_dir, "Snakemake", "config", "config.yaml"))
-    shutil.copy(snakefile, os.path.join(out_dir, "Snakemake", "workflow", "Snakefile"))
+    shutil.copy(config_file, os.path.join(
+        out_dir, "Snakemake", "config", "config.yaml"))
+    shutil.copy(snakefile, os.path.join(
+        out_dir, "Snakemake", "workflow", "Snakefile"))
+
 
 def prepare_GEX_ACC(
         cisTopic_obj_fname: pathlib.Path,
@@ -92,7 +96,7 @@ def prepare_GEX_ACC(
     GEX_anndata = mudata.read(GEX_anndata_fname.__str__())
     if is_multiome:
         if bc_transform_func is None:
-            bc_transform_func = lambda x: x  # noqa: E731
+            def bc_transform_func(x): return x  # noqa: E731
         mdata = process_multiome_data(
             GEX_anndata=GEX_anndata,
             cisTopic_obj=cisTopic_obj,
@@ -111,6 +115,7 @@ def prepare_GEX_ACC(
             nr_metacells=nr_metacells,
             nr_cells_per_metacells=nr_cells_per_metacells)
     mdata.write_h5mu(out_file)
+
 
 def _run_cistarget_single_region_set(
         cistarget_db_fname,
@@ -148,6 +153,7 @@ def _run_cistarget_single_region_set(
     )
     cistarget_result.run_ctx(ctx_db)
     return cistarget_result
+
 
 def run_motif_enrichment_cistarget(
         region_set_folder: pathlib.Path,
@@ -217,26 +223,27 @@ def run_motif_enrichment_cistarget(
         if os.path.isdir(os.path.join(region_set_folder, region_set_subfolder)):
             log.info(f"Reading all .bed files in: {region_set_subfolder}")
             if any(
-                f.endswith(".bed")
-                    for f in
-                    os.listdir(
+                    f.endswith(".bed")
+                for f in
+                os.listdir(
                         os.path.join(
                             region_set_folder, region_set_subfolder
                         )
-                    )
-                ):
+                        )
+            ):
                 for f in os.listdir(os.path.join(region_set_folder, region_set_subfolder)):
                     if f.endswith(".bed"):
-                        key_name = region_set_subfolder + "_" + f.replace(".bed", "")
+                        key_name = region_set_subfolder + \
+                            "_" + f.replace(".bed", "")
                         if key_name in region_set_dict:
                             raise ValueError(
                                 f"non unique folder/file combination: {key_name}"
                             )
                         region_set_dict[key_name] = pr.read_bed(
-                                os.path.join(
-                                        region_set_folder, region_set_subfolder, f
-                                ),
-                                as_df=False
+                            os.path.join(
+                                region_set_folder, region_set_subfolder, f
+                            ),
+                            as_df=False
                         )
 
     cistarget_results: List[cisTarget] = joblib.Parallel(
@@ -246,7 +253,7 @@ def run_motif_enrichment_cistarget(
         joblib.delayed(
             _run_cistarget_single_region_set
         )(
-            name = key,
+            name=key,
             region_set=region_set_dict[key],
             cistarget_db_fname=cistarget_db_fname,
             fraction_overlap_w_cistarget_database=fraction_overlap_w_cistarget_database,
@@ -269,17 +276,18 @@ def run_motif_enrichment_cistarget(
             ctx_result.motif_enrichment for ctx_result in cistarget_results
         )
         all_motif_enrichment_df.to_html(
-            buf = output_fname_cistarget_html,
-            escape = False,
-            col_space = 80
+            buf=output_fname_cistarget_html,
+            escape=False,
+            col_space=80
         )
     log.info(f"Writing output to: {output_fname_cistarget_result}")
     for cistarget_result in cistarget_results:
         if len(cistarget_result.motif_enrichment) > 0:
             cistarget_result.write_hdf5(
-                path = output_fname_cistarget_result,
-                mode = "a"
+                path=output_fname_cistarget_result,
+                mode="a"
             )
+
 
 def _run_dem_single_region_set(
         foreground_region_sets,
@@ -309,39 +317,40 @@ def _run_dem_single_region_set(
     )
     # Get foreground and background regions for DEM analysis
     foreground_regions, background_regions = get_foreground_and_background_regions(
-        foreground_region_sets = foreground_region_sets,
-        background_region_sets = background_region_sets,
-        max_bg_regions = max_bg_regions,
-        genome_annotation = genome_annotation,
-        balance_number_of_promoters = balance_number_of_promoters,
-        promoter_space = promoter_space,
-        seed = seed)
+        foreground_region_sets=foreground_region_sets,
+        background_region_sets=background_region_sets,
+        max_bg_regions=max_bg_regions,
+        genome_annotation=genome_annotation,
+        balance_number_of_promoters=balance_number_of_promoters,
+        promoter_space=promoter_space,
+        seed=seed)
     # Load DEM database
     dem_db = DEMDatabase(
         dem_db_fname,
         fraction_overlap=fraction_overlap_w_dem_database)
     # Setup DEM analysis
     dem_result = DEM(
-        foreground_regions = foreground_regions,
-        background_regions = background_regions,
-        name = name,
-        species = species,
-        adjpval_thr = adjpval_thr,
-        log2fc_thr = log2fc_thr,
-        mean_fg_thr = mean_fg_thr,
-        motif_hit_thr = motif_hit_thr,
-        path_to_motif_annotations = path_to_motif_annotations,
-        annotation_version = annotation_version,
-        annotation_to_use = annotations_to_use,
-        motif_similarity_fdr = motif_similarity_fdr,
-        orthologous_identity_threshold = orthologous_identity_threshold)
+        foreground_regions=foreground_regions,
+        background_regions=background_regions,
+        name=name,
+        species=species,
+        adjpval_thr=adjpval_thr,
+        log2fc_thr=log2fc_thr,
+        mean_fg_thr=mean_fg_thr,
+        motif_hit_thr=motif_hit_thr,
+        path_to_motif_annotations=path_to_motif_annotations,
+        annotation_version=annotation_version,
+        annotation_to_use=annotations_to_use,
+        motif_similarity_fdr=motif_similarity_fdr,
+        orthologous_identity_threshold=orthologous_identity_threshold)
     # Run DEM analysis
     dem_result.run(dem_db)
     return dem_result
 
+
 def _get_foreground_background(
-        region_set_dict: Dict[str, Dict[str, pr.PyRanges]]
-    ) -> Iterator[Tuple[str, List[pr.PyRanges], List[pr.PyRanges]]]:
+    region_set_dict: Dict[str, Dict[str, pr.PyRanges]]
+) -> Iterator[Tuple[str, List[pr.PyRanges], List[pr.PyRanges]]]:
     """Helper function to get foreground and background regions for DEM analysis."""
     for key in region_set_dict:
         for subkey_fg in region_set_dict[key]:
@@ -353,6 +362,7 @@ def _get_foreground_background(
             ]
             yield (key + "_" + subkey_fg + "_vs_all", foreground, background)
 
+
 def run_motif_enrichment_dem(
         region_set_folder: pathlib.Path,
         dem_db_fname: pathlib.Path,
@@ -361,7 +371,7 @@ def run_motif_enrichment_dem(
         n_cpu: int,
         temp_dir: pathlib.Path,
         species: Literal[
-                "homo_sapiens", "mus_musculus", "drosophila_melanogaster"],
+            "homo_sapiens", "mus_musculus", "drosophila_melanogaster"],
         fraction_overlap_w_dem_database: float = 0.4,
         max_bg_regions: Optional[int] = None,
         path_to_genome_annotation: Optional[str] = None,
@@ -441,21 +451,21 @@ def run_motif_enrichment_dem(
             region_set_dict[region_set_subfolder] = {}
             log.info(f"Reading all .bed files in: {region_set_subfolder}")
             if any(
-                f.endswith(".bed")
-                    for f in
-                    os.listdir(
+                    f.endswith(".bed")
+                for f in
+                os.listdir(
                         os.path.join(
                             region_set_folder, region_set_subfolder
                         )
-                    )
-                ):
+                        )
+            ):
                 for f in os.listdir(os.path.join(region_set_folder, region_set_subfolder)):
                     if f.endswith(".bed"):
                         region_set_dict[region_set_subfolder][f.replace(".bed", "")] = pr.read_bed(
-                                os.path.join(
-                                        region_set_folder, region_set_subfolder, f
-                                ),
-                                as_df=False
+                            os.path.join(
+                                region_set_folder, region_set_subfolder, f
+                            ),
+                            as_df=False
                         )
     # Read genome annotation, if needed
     if path_to_genome_annotation is not None:
@@ -499,17 +509,18 @@ def run_motif_enrichment_dem(
             ctx_result.motif_enrichment for ctx_result in dem_results
         )
         all_motif_enrichment_df.to_html(
-            buf = output_fname_dem_html,
-            escape = False,
-            col_space = 80
+            buf=output_fname_dem_html,
+            escape=False,
+            col_space=80
         )
     log.info(f"Writing output to: {output_fname_dem_result}")
     for dem_result in dem_results:
         if len(dem_result.motif_enrichment) > 0:
             dem_result.write_hdf5(
-                path = output_fname_dem_result,
-                mode = "a"
+                path=output_fname_dem_result,
+                mode="a"
             )
+
 
 def prepare_motif_enrichment_results(
         paths_to_motif_enrichment_results: List[str],
@@ -569,10 +580,14 @@ def prepare_motif_enrichment_results(
     if len(extended_annotation) > 0:
         log.info(
             f"Writing extended cistromes to: {out_file_extended_annotation.__str__()}")
-        adata_extended_cistromes.write_h5ad(out_file_extended_annotation.__str__())
+        adata_extended_cistromes.write_h5ad(
+            out_file_extended_annotation.__str__())
+
 
 def download_gene_annotation_chromsizes(
         species: str,
+        annot_path: str,
+        assembly_report_path: str,
         biomart_host: str,
         use_ucsc_chromosome_style: bool,
         genome_annotation_out_fname: pathlib.Path,
@@ -596,25 +611,36 @@ def download_gene_annotation_chromsizes(
     """
     from scenicplus.data_wrangling.gene_search_space import (
         download_gene_annotation_and_chromsizes,
+        load_gene_annotation_and_chromsizes
     )
-    result = download_gene_annotation_and_chromsizes(
-            species=species,
-            biomart_host=biomart_host,
-            use_ucsc_chromosome_style=use_ucsc_chromosome_style)
+    # result = download_gene_annotation_and_chromsizes(
+    #     species=species,
+    #     biomart_host=biomart_host,
+    #     use_ucsc_chromosome_style=use_ucsc_chromosome_style)
+    # Run this instead of the above line to avoid downloading the data
+    result = load_gene_annotation_and_chromsizes(
+        species=species,
+        annot_path=annot_path,
+        assembly_report_path=assembly_report_path,
+        use_ucsc_chromosome_style=use_ucsc_chromosome_style)
+
     if type(result) is tuple:
         annot, chromsizes = result
-        log.info(f"Saving chromosome sizes to: {chromsizes_out_fname.__str__()}")
+        log.info(
+            f"Saving chromosome sizes to: {chromsizes_out_fname.__str__()}")
         chromsizes.to_csv(
             chromsizes_out_fname,
-            sep = "\t", header = True, index = False)
+            sep="\t", header=True, index=False)
     else:
         annot = result
         log.info(
             "Chrosomome sizes was not found, please provide this information manually.")
-    log.info(f"Saving genome annotation to: {genome_annotation_out_fname.__str__()}")
+    log.info(
+        f"Saving genome annotation to: {genome_annotation_out_fname.__str__()}")
     annot.to_csv(
         genome_annotation_out_fname,
-        sep = "\t", header = True, index = False)
+        sep="\t", header=True, index=False)
+
 
 def get_search_space_command(
         multiome_mudata_fname: pathlib.Path,
@@ -656,8 +682,8 @@ def get_search_space_command(
     from scenicplus.data_wrangling.gene_search_space import get_search_space
     log.info("Reading data")
     mdata = mudata.read(multiome_mudata_fname.__str__())
-    gene_annotation=pd.read_table(gene_annotation_fname)
-    chromsizes=pd.read_table(chromsizes_fname)
+    gene_annotation = pd.read_table(gene_annotation_fname)
+    chromsizes = pd.read_table(chromsizes_fname)
     search_space = get_search_space(
         scplus_region=set(mdata["scATAC"].var_names),
         scplus_genes=set(mdata["scRNA"].var_names),
@@ -670,8 +696,9 @@ def get_search_space_command(
         remove_promoters=remove_promoters)
     log.info(f"Writing search space to: {out_fname.__str__()}")
     search_space.to_csv(
-        out_fname, sep = "\t",
-        header = True, index = False)
+        out_fname, sep="\t",
+        header=True, index=False)
+
 
 def infer_TF_to_gene(
         multiome_mudata_fname: pathlib.Path,
@@ -685,19 +712,20 @@ def infer_TF_to_gene(
     log.info("Reading multiome MuData.")
     mdata = mudata.read(multiome_mudata_fname.__str__())
     with open(tf_names_fname) as f:
-         tf_names = f.read().split("\n")
+        tf_names = f.read().split("\n")
     log.info(f"Using {len(tf_names)} TFs.")
     adj = calculate_TFs_to_genes_relationships(
         df_exp_mtx=mdata["scRNA"].to_df(),
-        tf_names = tf_names,
-        temp_dir = temp_dir,
-        method = method,
-        n_cpu = n_cpu,
-        seed = seed)
+        tf_names=tf_names,
+        temp_dir=temp_dir,
+        method=method,
+        n_cpu=n_cpu,
+        seed=seed)
     log.info(f"Saving TF to gene adjacencies to: {adj_out_fname.__str__()}")
     adj.to_csv(
         adj_out_fname,
-        sep="\t", header = True, index = False)
+        sep="\t", header=True, index=False)
+
 
 def infer_region_to_gene(
         multiome_mudata_fname: pathlib.Path,
@@ -737,18 +765,19 @@ def infer_region_to_gene(
     log.info("Reading search space")
     search_space = pd.read_table(search_space_fname)
     adj = calculate_regions_to_genes_relationships(
-        df_exp_mtx = mdata["scRNA"].to_df(),
-        df_acc_mtx = mdata["scATAC"].to_df(),
-        search_space = search_space,
-        temp_dir = temp_dir,
-        mask_expr_dropout = mask_expr_dropout,
-        importance_scoring_method = importance_scoring_method,
-        correlation_scoring_method = correlation_scoring_method,
-        n_cpu = n_cpu)
+        df_exp_mtx=mdata["scRNA"].to_df(),
+        df_acc_mtx=mdata["scATAC"].to_df(),
+        search_space=search_space,
+        temp_dir=temp_dir,
+        mask_expr_dropout=mask_expr_dropout,
+        importance_scoring_method=importance_scoring_method,
+        correlation_scoring_method=correlation_scoring_method,
+        n_cpu=n_cpu)
     log.info(f"Saving region to gene adjacencies to {adj_out_fname.__str__()}")
     adj.to_csv(
         adj_out_fname,
-        sep="\t", header = True, index = False)
+        sep="\t", header=True, index=False)
+
 
 def _format_egrns(
         eRegulons: List[eRegulon],
@@ -789,11 +818,13 @@ def _format_egrns(
         eRegulons_formatted.append(region_to_gene)
     eRegulon_metadata = pd.concat(eRegulons_formatted)
     eRegulon_metadata = eRegulon_metadata.merge(
-        right=tf_to_gene.rename({"target": "Gene"}, axis = 1), #TODO: rename col beforehand!
+        # TODO: rename col beforehand!
+        right=tf_to_gene.rename({"target": "Gene"}, axis=1),
         how="left",
-        on= ["TF", "Gene"],
+        on=["TF", "Gene"],
         suffixes=["_R2G", "_TF2G"])
     return eRegulon_metadata
+
 
 def infer_grn(
         TF_to_gene_adj_fname: pathlib.Path,
@@ -924,6 +955,7 @@ def infer_grn(
         eRegulon_out_fname,
         sep="\t", header=True, index=False)
 
+
 def calculate_auc(
         eRegulons_fname: pathlib.Path,
         multiome_mudata_fname: pathlib.Path,
@@ -962,6 +994,7 @@ def calculate_auc(
     log.info(f"Writing file to {out_file.__str__()}")
     mdata_AUC.write_h5mu(out_file.__str__())
 
+
 def create_scplus_mudata(
         multiome_mudata_fname: pathlib.Path,
         e_regulon_auc_direct_mudata_fname: pathlib.Path,
@@ -973,11 +1006,14 @@ def create_scplus_mudata(
     log.info("Reading multiome MuData.")
     acc_gex_mdata = mudata.read(multiome_mudata_fname.__str__())
     log.info("Reading AUC values.")
-    e_regulon_auc_direct = mudata.read(e_regulon_auc_direct_mudata_fname.__str__())
-    e_regulon_auc_extended = mudata.read(e_regulon_auc_extended_mudata_fname.__str__())
+    e_regulon_auc_direct = mudata.read(
+        e_regulon_auc_direct_mudata_fname.__str__())
+    e_regulon_auc_extended = mudata.read(
+        e_regulon_auc_extended_mudata_fname.__str__())
     log.info("Reading eRegulon metadata.")
     e_regulon_metadata_direct = pd.read_table(e_regulon_metadata_direct_fname)
-    e_regulon_metadata_extended = pd.read_table(e_regulon_metadata_extended_fname)
+    e_regulon_metadata_extended = pd.read_table(
+        e_regulon_metadata_extended_fname)
     log.info("Generating MuData object.")
     scplus_mdata = ScenicPlusMuData(
         acc_gex_mdata=acc_gex_mdata,

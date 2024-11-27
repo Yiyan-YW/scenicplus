@@ -224,11 +224,15 @@ rule download_genome_annotations:
         chromsizes=config["output_data"]["chromsizes"]
     params:
         species=lambda wildcards: config["params_data_preparation"]["species"],
-        biomart_host=lambda wildcards: config["params_data_preparation"]["biomart_host"]
+        biomart_host=lambda wildcards: config["params_data_preparation"]["biomart_host"],
+        annot_path=lambda wildcards: config["params_data_preparation"]["annot_path"],
+        assembly_report_path=lambda wildcards: config["params_data_preparation"]["assembly_report_path"]
     shell:
         """
         scenicplus prepare_data download_genome_annotations \
             --species {params.species} \
+            --annot_path {params.annot_path} \
+            --assembly_report_path {params.assembly_report_path} \
             --biomart_host {params.biomart_host} \
             --genome_annotation_out_fname {output.genome_annotation} \
             --chromsizes_out_fname {output.chromsizes}

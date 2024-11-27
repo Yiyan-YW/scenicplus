@@ -8,6 +8,7 @@ from scenicplus.cli import gfx
 VERSION = scenicplus.__version__
 _DESCRIPTION = "Single-Cell Enhancer-driven gene regulatory Network Inference and Clustering"
 
+
 def _function(arg: str):
     if not arg.startswith("lambda"):
         raise ValueError("Argument has to be a lambda function definition!")
@@ -17,6 +18,7 @@ def _function(arg: str):
 """
 Functions to create snakemake inti parser.
 """
+
 
 def add_parser_for_init_snakemake(parser: argparse.ArgumentParser):
     def init_snakemake(arg):
@@ -30,17 +32,20 @@ def add_parser_for_init_snakemake(parser: argparse.ArgumentParser):
         action="store", type=pathlib.Path, required=True,
         help="Path to out dir.")
 
+
 """
 Functions to create data preparation parsers.
 """
 
-def add_parser_for_prepare_GEX_and_ACC_data(subparser:argparse._SubParsersAction):
-    parser:argparse.ArgumentParser = subparser.add_parser(
-        name = "prepare_GEX_ACC",
-        add_help = True,
+
+def add_parser_for_prepare_GEX_and_ACC_data(subparser: argparse._SubParsersAction):
+    parser: argparse.ArgumentParser = subparser.add_parser(
+        name="prepare_GEX_ACC",
+        add_help=True,
         description="""
         Prepare scRNA-seq, scATAC-seq data. Returns a MuData file
         containing linked gene expression and chromatin accessibility data.""")
+
     def command_prepare_GEX_ACC(arg):
         from scenicplus.cli.commands import prepare_GEX_ACC
         prepare_GEX_ACC(
@@ -102,14 +107,16 @@ def add_parser_for_prepare_GEX_and_ACC_data(subparser:argparse._SubParsersAction
         If this is a single integer the same number of cells will be used for all annotations.
         Default is 10""")
 
-def add_parser_for_prepare_menr_data(subparser:argparse._SubParsersAction):
-    parser:argparse.ArgumentParser = subparser.add_parser(
-        name = "prepare_menr",
-        add_help = True,
+
+def add_parser_for_prepare_menr_data(subparser: argparse._SubParsersAction):
+    parser: argparse.ArgumentParser = subparser.add_parser(
+        name="prepare_menr",
+        add_help=True,
         description="""
         Prepare motif enrichment data. Returns two AnnData files
         containing cistroms based on direct and extended motif-to-TF annotations.
         Also updates the multiome MuData indicating which genes are TFs.""")
+
     def prepare_menr_data(arg):
         if len(arg.direct_annotation) > 0 and arg.out_file_direct_annotation is None:
             raise ValueError("Please provide path for --direct_annotation!")
@@ -158,16 +165,20 @@ def add_parser_for_prepare_menr_data(subparser:argparse._SubParsersAction):
         default=["Orthology_annot"],
         help="Annotations to use as extended. Default is 'Orthology_annot'")
 
-def add_parser_for_download_genome_annotations(subparser:argparse._SubParsersAction):
-    parser:argparse.ArgumentParser = subparser.add_parser(
-        name = "download_genome_annotations",
-        add_help = True,
+
+def add_parser_for_download_genome_annotations(subparser: argparse._SubParsersAction):
+    parser: argparse.ArgumentParser = subparser.add_parser(
+        name="download_genome_annotations",
+        add_help=True,
         description="""
         Download genome annotation and chromsizes and save to tsv""")
+
     def download_command(arg):
         from scenicplus.cli.commands import download_gene_annotation_chromsizes
         download_gene_annotation_chromsizes(
             species=arg.species,
+            annot_path=arg.annot_path,
+            assembly_report_path=arg.assembly_report_path,
             genome_annotation_out_fname=arg.genome_annotation_out_fname,
             chromsizes_out_fname=arg.chromsizes_out_fname,
             biomart_host=arg.biomart_host,
@@ -190,19 +201,29 @@ def add_parser_for_download_genome_annotations(subparser:argparse._SubParsersAct
     parser.add_argument(
         "--biomart_host", dest="biomart_host",
         action="store", type=str, required=False,
-        default = "http://www.ensembl.org",
+        default="http://www.ensembl.org",
         help="Biomart host name")
     parser.add_argument(
         "--do_not_use_ucsc_chromosome_style", dest="do_not_use_ucsc_chromosome_style",
         action="store_true",
         help="Do not use UCSC chromosome style names.")
+    parser.add_argument(
+        "--annot_path", dest="annot_path",
+        action="store", type=pathlib.Path, required=False,
+        help="Path to annotation file.")
+    parser.add_argument(
+        "--assembly_report_path", dest="assembly_report_path",
+        action="store", type=pathlib.Path, required=False,
+        help="Path to assembly report file.")
 
-def add_parser_for_search_space(subparser:argparse._SubParsersAction):
-    parser:argparse.ArgumentParser = subparser.add_parser(
-        name = "search_spance",
-        add_help = True,
+
+def add_parser_for_search_space(subparser: argparse._SubParsersAction):
+    parser: argparse.ArgumentParser = subparser.add_parser(
+        name="search_spance",
+        add_help=True,
         description="""
         Get search space for each gene. Returns tsv with search spance""")
+
     def search_space(arg):
         from scenicplus.cli.commands import get_search_space_command
         get_search_space_command(
@@ -267,12 +288,14 @@ def add_parser_for_search_space(subparser:argparse._SubParsersAction):
 Functions to create GRN inference parsers.
 """
 
-def add_parser_for_infer_TF_to_gene(subparser:argparse._SubParsersAction):
-    parser:argparse.ArgumentParser = subparser.add_parser(
-        name = "TF_to_gene",
-        add_help = True,
+
+def add_parser_for_infer_TF_to_gene(subparser: argparse._SubParsersAction):
+    parser: argparse.ArgumentParser = subparser.add_parser(
+        name="TF_to_gene",
+        add_help=True,
         description="""
         Infer TF-to-gene relationships""")
+
     def TF_to_gene(arg):
         from scenicplus.cli.commands import infer_TF_to_gene
         infer_TF_to_gene(
@@ -305,8 +328,8 @@ def add_parser_for_infer_TF_to_gene(subparser:argparse._SubParsersAction):
     # Optional arguments
     parser.add_argument(
         "--method", dest="method",
-        action="store", choices = ["GBM", "RF"], required=False,
-        default = "GBM",
+        action="store", choices=["GBM", "RF"], required=False,
+        default="GBM",
         help="Regression method to use, either GBM (Gradient Boosting Machine) or RF (Random Forrest). Default is GBM")
     parser.add_argument(
         "--n_cpu", dest="n_cpu",
@@ -319,12 +342,14 @@ def add_parser_for_infer_TF_to_gene(subparser:argparse._SubParsersAction):
         default=666,
         help="Seed to use. Default is 666.")
 
-def add_parser_for_infer_region_to_gene(subparser:argparse._SubParsersAction):
-    parser:argparse.ArgumentParser = subparser.add_parser(
-        name = "region_to_gene",
-        add_help = True,
+
+def add_parser_for_infer_region_to_gene(subparser: argparse._SubParsersAction):
+    parser: argparse.ArgumentParser = subparser.add_parser(
+        name="region_to_gene",
+        add_help=True,
         description="""
         Infer region-to-gene relationships""")
+
     def TF_to_gene(arg):
         from scenicplus.cli.commands import infer_region_to_gene
         infer_region_to_gene(
@@ -335,7 +360,7 @@ def add_parser_for_infer_region_to_gene(subparser:argparse._SubParsersAction):
             importance_scoring_method=arg.importance_scoring_method,
             correlation_scoring_method=arg.correlation_scoring_method,
             mask_expr_dropout=arg.mask_expr_dropout,
-            n_cpu = arg.n_cpu)
+            n_cpu=arg.n_cpu)
     parser.set_defaults(func=TF_to_gene)
     # Required arguments
     parser.add_argument(
@@ -358,13 +383,13 @@ def add_parser_for_infer_region_to_gene(subparser:argparse._SubParsersAction):
     # Optional arguments
     parser.add_argument(
         "--importance_scoring_method", dest="importance_scoring_method",
-        action="store", choices = ["RF", "ET", "GBM"], required=False,
-        default = "GBM",
+        action="store", choices=["RF", "ET", "GBM"], required=False,
+        default="GBM",
         help="Regression method to use, either GBM (Gradient Boosting Machine), RF (Random Forrest) or ET (Extra Trees). Default is GBM.")
     parser.add_argument(
         "--correlation_scoring_method", dest="correlation_scoring_method",
-        action="store", choices = ["PR", "SR"], required=False,
-        default = "SR",
+        action="store", choices=["PR", "SR"], required=False,
+        default="SR",
         help="Correlation method to use, either PR (Pearson correlation) or SR (Spearman Rank correlation). Default is SR.")
     parser.add_argument(
         "--mask_expr_dropout", dest="mask_expr_dropout",
@@ -376,13 +401,15 @@ def add_parser_for_infer_region_to_gene(subparser:argparse._SubParsersAction):
         default=1,
         help="Number of cores to use. Default is 1.")
 
-def add_parser_for_motif_enrichment_cistarget(subparser:argparse._SubParsersAction):
-    parser:argparse.ArgumentParser = subparser.add_parser(
-        name = "motif_enrichment_cistarget",
-        add_help = True,
+
+def add_parser_for_motif_enrichment_cistarget(subparser: argparse._SubParsersAction):
+    parser: argparse.ArgumentParser = subparser.add_parser(
+        name="motif_enrichment_cistarget",
+        add_help=True,
         description="""
             Run motif enrichment on a set of regions using the cistarget algorithm
         """)
+
     def motif_enrichment_cistarget(arg):
         from scenicplus.cli.commands import run_motif_enrichment_cistarget
         run_motif_enrichment_cistarget(
@@ -468,7 +495,7 @@ def add_parser_for_motif_enrichment_cistarget(subparser:argparse._SubParsersActi
         required=False,
         help="""
             Threshold on the AUC value for calling significant motifs.
-            Defaults to: """+ str(CISTARGET_DEFAULTS["auc_threshold"]),
+            Defaults to: """ + str(CISTARGET_DEFAULTS["auc_threshold"]),
         default=CISTARGET_DEFAULTS["auc_threshold"],
     )
     parser.add_argument(
@@ -562,7 +589,7 @@ def add_parser_for_motif_enrichment_cistarget(subparser:argparse._SubParsersActi
         dest="output_fname_cistarget_html",
         action="store",
         type=str,
-        required=False, default = None,
+        required=False, default=None,
         help="Path to store cistarget result html (.html), only if --write_html.",
     )
     parser.add_argument(
@@ -829,7 +856,7 @@ def add_parser_for_motif_enrichment_dem(subparser: argparse._SubParsersAction):
         dest="output_fname_dem_html",
         action="store",
         type=str,
-        required=False, default = None,
+        required=False, default=None,
         help="Path to store dem result html (.html), only if --write_html.",
     )
     parser.add_argument(
@@ -850,12 +877,13 @@ def add_parser_for_motif_enrichment_dem(subparser: argparse._SubParsersAction):
         help="Number of cores to use. Default is 1.")
 
 
-def add_parser_for_infer_egrn(subparser:argparse._SubParsersAction):
-    parser:argparse.ArgumentParser = subparser.add_parser(
-        name = "eGRN",
-        add_help = True,
+def add_parser_for_infer_egrn(subparser: argparse._SubParsersAction):
+    parser: argparse.ArgumentParser = subparser.add_parser(
+        name="eGRN",
+        add_help=True,
         description="""
         Infer enhancer-driven Gene Regulatory Network (eGRN)""")
+
     def eGRN(arg):
         from scenicplus.cli.commands import infer_grn
         infer_grn(
@@ -872,11 +900,11 @@ def add_parser_for_infer_egrn(subparser:argparse._SubParsersAction):
             quantiles=arg.quantiles,
             top_n_regionTogenes_per_gene=arg.top_n_regionTogenes_per_gene,
             top_n_regionTogenes_per_region=arg.top_n_regionTogenes_per_region,
-            binarize_using_basc=not(arg.do_not_binarize_using_basc),
+            binarize_using_basc=not (arg.do_not_binarize_using_basc),
             min_regions_per_gene=arg.min_regions_per_gene,
-            rho_dichotomize_tf2g=not(arg.do_not_rho_dichotomize_tf2g),
-            rho_dichotomize_r2g=not(arg.do_not_rho_dichotomize_r2g),
-            rho_dichotomize_eregulon=not(arg.do_not_rho_dichotomize_eRegulon),
+            rho_dichotomize_tf2g=not (arg.do_not_rho_dichotomize_tf2g),
+            rho_dichotomize_r2g=not (arg.do_not_rho_dichotomize_r2g),
+            rho_dichotomize_eregulon=not (arg.do_not_rho_dichotomize_eRegulon),
             keep_only_activating=arg.keep_only_activating_eRegulons,
             rho_threshold=arg.rho_threshold,
             min_target_genes=arg.min_target_genes,
@@ -985,12 +1013,14 @@ def add_parser_for_infer_egrn(subparser:argparse._SubParsersAction):
         default=1,
         help="Number of cores to use. Default is 1.")
 
-def add_parser_for_aucell(subparser:argparse._SubParsersAction):
-    parser:argparse.ArgumentParser = subparser.add_parser(
-        name = "AUCell",
-        add_help = True,
+
+def add_parser_for_aucell(subparser: argparse._SubParsersAction):
+    parser: argparse.ArgumentParser = subparser.add_parser(
+        name="AUCell",
+        add_help=True,
         description="""
         Calculate eRegulon enrichment scores using AUCell""")
+
     def aucell(arg):
         from scenicplus.cli.commands import calculate_auc
         calculate_auc(
@@ -1019,13 +1049,15 @@ def add_parser_for_aucell(subparser:argparse._SubParsersAction):
         default=1,
         help="Number of cores to use. Default is 1.")
 
-def add_parser_for_create_scplus_mudata(subparser:argparse._SubParsersAction):
-    parser:argparse.ArgumentParser = subparser.add_parser(
-        name = "create_scplus_mudata",
-        add_help = True,
+
+def add_parser_for_create_scplus_mudata(subparser: argparse._SubParsersAction):
+    parser: argparse.ArgumentParser = subparser.add_parser(
+        name="create_scplus_mudata",
+        add_help=True,
         description="""
         Create MuData object to store SCENIC+ results.
         Can be used for downstream analysis.""")
+
     def create_object(arg):
         from scenicplus.cli.commands import create_scplus_mudata
         create_scplus_mudata(
@@ -1062,6 +1094,7 @@ def add_parser_for_create_scplus_mudata(subparser:argparse._SubParsersAction):
         action="store", type=pathlib.Path, required=True,
         help="Path to store resulting MuData (.h5mu)")
 
+
 def create_argument_parser():
     parser = argparse.ArgumentParser(
         description=_DESCRIPTION)
@@ -1070,10 +1103,10 @@ def create_argument_parser():
     """
     Init snakemake parser
     """
-    init_snakemake_command="init_snakemake"
+    init_snakemake_command = "init_snakemake"
     init_snakemake_parser = subparsers.add_parser(
-        name = init_snakemake_command,
-        add_help = True,
+        name=init_snakemake_command,
+        add_help=True,
         description="""
         Initialize snakemake pipeline""")
     add_parser_for_init_snakemake(init_snakemake_parser)
@@ -1081,7 +1114,7 @@ def create_argument_parser():
     """
     Data preparation parsers
     """
-    prepare_data_command="prepare_data"
+    prepare_data_command = "prepare_data"
     preprocessing_parser = subparsers.add_parser(
         prepare_data_command,
         description="Prepare gene expression, chromatin accessibility and motif enrichment data.")
@@ -1097,7 +1130,7 @@ def create_argument_parser():
     """
     GRN inference parsers
     """
-    grn_inference_command="grn_inference"
+    grn_inference_command = "grn_inference"
     inference_parser = subparsers.add_parser(
         grn_inference_command,
         description="Infer Enhancer driven Gene Regulatory Networks.")
@@ -1118,8 +1151,9 @@ def create_argument_parser():
         grn_inference_command: inference_parser}
     return parser, subparser_dict
 
+
 def main(argv=None) -> int:
-    #parse command line arguments
+    # parse command line arguments
     parser, subparsers = create_argument_parser()
     args = parser.parse_args(args=argv)
 
@@ -1136,6 +1170,7 @@ def main(argv=None) -> int:
     else:
         args.func(args)
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())
